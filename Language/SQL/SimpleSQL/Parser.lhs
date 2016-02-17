@@ -306,7 +306,7 @@ u&"example quoted"
 >     d <- getState
 >     choice [QName <$> quotedIdentifier
 >            ,UQName <$> uquotedIdentifier
->            ,Name <$> identifierBlacklist (blacklist d)
+>            ,Name <$> identifierBlacklist [] -- XXX (blacklist d)
 >            ,dqName]
 >   where
 >     dqName = guardDialect [MySQL] *>
