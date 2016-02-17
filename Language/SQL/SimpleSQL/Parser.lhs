@@ -306,6 +306,19 @@ u&"example quoted"
 >     d <- getState
 >     choice [QName <$> quotedIdentifier
 >            ,UQName <$> uquotedIdentifier
+>            ,Name <$> identifierBlacklist (blacklist d)
+>            ,dqName]
+>   where
+>     dqName = guardDialect [MySQL] *>
+>              lexeme (DQName "`" "`"
+>                      <$> (char '`'
+>                           *> manyTill anyChar (char '`')))
+
+> tmdName :: Parser Name
+> tmdName = do
+>     d <- getState
+>     choice [QName <$> quotedIdentifier
+>            ,UQName <$> uquotedIdentifier
 >            ,Name <$> identifierBlacklist [] -- (blacklist d)
 >            ,dqName]
 >   where
@@ -324,6 +337,15 @@ todo: replace (:[]) with a named function all over
 >   where
 >     anotherName :: Parser ([Name] -> [Name])
 >     anotherName = try ((:) <$> (symbol "." *> name))
+
+> tmdNames :: Parser [Name]
+> tmdNames = reverse <$> (((:[]) <$> tmdName) <??*> anotherName)
+>   -- can't use a simple chain here since we
+>   -- want to wrap the . + name in a try
+>   -- this will change when this is left factored
+>   where
+>     anotherName :: Parser ([Name] -> [Name])
+>     anotherName = try ((:) <$> (symbol "." *> tmdName))
 
 = Type Names
 
@@ -703,6 +725,12 @@ all the value expressions which start with an identifier
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> stringToken)
 >     <|> (names <**> option Iden app)
+
+> tmdIdenExpr :: Parser ValueExpr
+> tmdIdenExpr =
+>     -- todo: work out how to left factor this
+>     try (TypedLit <$> typeName <*> stringToken)
+>     <|> (tmdNames <**> option Iden app)
 
 === special
 
@@ -1138,7 +1166,7 @@ documenting/fixing.
 >               ,subquery
 >               ,intervalLit
 >               ,specialOpKs
->               ,idenExpr]
+>               ,tmdIdenExpr]
 >        <?> "value expression"
 
 expose the b expression for window frame clause range between
