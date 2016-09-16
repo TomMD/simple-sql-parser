@@ -1,6 +1,7 @@
 
 > -- | The AST for SQL queries.
 > {-# LANGUAGE DeriveDataTypeable #-}
+> {-# LANGUAGE DeriveGeneric #-}
 > module Language.SQL.SimpleSQL.Syntax
 >     (-- * Value expressions
 >      ValueExpr(..)
@@ -37,6 +38,8 @@
 >     ) where
 
 > import Data.Data
+> import GHC.Generics (Generic)
+> import Control.DeepSeq (NFData)
 
 > -- | Represents a value expression. This is used for the expressions
 > -- in select lists. It is also used for expressions in where, group
@@ -164,7 +167,7 @@
 >     | MultisetQueryCtor QueryExpr
 >     | NextValueFor [Name]
 >     | VEComment [Comment] ValueExpr
->       deriving (Eq,Show,Read,Data,Typeable)
+>       deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
 > data Name = Name String
@@ -172,7 +175,7 @@
 >           | UQName String
 >           | DQName String String String
 >             -- ^ dialect quoted name, the fields are start quote, end quote and the string itself, e.g. `something` is parsed to DQName "`" "`" "something, and $a$ test $a$ is parsed to DQName "$a$" "$a" " test "
->             deriving (Eq,Show,Read,Data,Typeable)
+>             deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents a type name, used in casts.
 > data TypeName
@@ -187,22 +190,22 @@
 >     | IntervalTypeName IntervalTypeField (Maybe IntervalTypeField)
 >     | ArrayTypeName TypeName (Maybe Integer)
 >     | MultisetTypeName TypeName
->       deriving (Eq,Show,Read,Data,Typeable)
+>       deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > data IntervalTypeField = Itf String (Maybe (Integer, Maybe Integer))
->                          deriving (Eq,Show,Read,Data,Typeable)
+>                          deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > data PrecMultiplier = PrecK | PrecM | PrecG | PrecT | PrecP
->                       deriving (Eq,Show,Read,Data,Typeable)
+>                       deriving (Eq,Show,Read,Data,Typeable,Generic)
 > data PrecUnits = PrecCharacters
 >                | PrecOctets
->                 deriving (Eq,Show,Read,Data,Typeable)
+>                 deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Used for 'expr in (value expression list)', and 'expr in
 > -- (subquery)' syntax.
 > data InPredValue = InList [ValueExpr]
 >                  | InQueryExpr QueryExpr
->                    deriving (Eq,Show,Read,Data,Typeable)
+>                    deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 not sure if scalar subquery, exists and unique should be represented like this
 
@@ -214,34 +217,34 @@ not sure if scalar subquery, exists and unique should be represented like this
 >     | SqUnique
 >       -- | a scalar subquery
 >     | SqSq
->       deriving (Eq,Show,Read,Data,Typeable)
+>       deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > data CompPredQuantifier
 >     = CPAny
 >     | CPSome
 >     | CPAll
->       deriving (Eq,Show,Read,Data,Typeable)
+>       deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents one field in an order by list.
 > data SortSpec = SortSpec ValueExpr Direction NullsOrder
->                 deriving (Eq,Show,Read,Data,Typeable)
+>                 deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents 'nulls first' or 'nulls last' in an order by clause.
 > data NullsOrder = NullsOrderDefault
 >                 | NullsFirst
 >                 | NullsLast
->                   deriving (Eq,Show,Read,Data,Typeable)
+>                   deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents the frame clause of a window
 > -- this can be [range | rows] frame_start
 > -- or [range | rows] between frame_start and frame_end
 > data Frame = FrameFrom FrameRows FramePos
 >            | FrameBetween FrameRows FramePos FramePos
->              deriving (Eq,Show,Read,Data,Typeable)
+>              deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents whether a window frame clause is over rows or ranges.
 > data FrameRows = FrameRows | FrameRange
->                  deriving (Eq,Show,Read,Data,Typeable)
+>                  deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | represents the start or end of a frame
 > data FramePos = UnboundedPreceding
@@ -249,7 +252,7 @@ not sure if scalar subquery, exists and unique should be represented like this
 >               | Current
 >               | Following ValueExpr
 >               | UnboundedFollowing
->                 deriving (Eq,Show,Read,Data,Typeable)
+>                 deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents a query expression, which can be:
 > --
@@ -296,7 +299,7 @@ This would make some things a bit cleaner?
 >     | Values [[ValueExpr]]
 >     | Table [Name]
 >     | QEComment [Comment] QueryExpr
->       deriving (Eq,Show,Read,Data,Typeable)
+>       deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 TODO: add queryexpr parens to deal with e.g.
 (select 1 union select 2) union select 3
@@ -330,14 +333,14 @@ I'm not sure if this is valid syntax or not.
 > -- | Represents the Distinct or All keywords, which can be used
 > -- before a select list, in an aggregate/window function
 > -- application, or in a query expression set operator.
-> data SetQuantifier = SQDefault | Distinct | All deriving (Eq,Show,Read,Data,Typeable)
+> data SetQuantifier = SQDefault | Distinct | All deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | The direction for a column in order by.
-> data Direction = DirDefault | Asc | Desc deriving (Eq,Show,Read,Data,Typeable)
+> data Direction = DirDefault | Asc | Desc deriving (Eq,Show,Read,Data,Typeable,Generic)
 > -- | Query expression set operators.
-> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read,Data,Typeable)
+> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read,Data,Typeable,Generic)
 > -- | Corresponding, an option for the set operators.
-> data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read,Data,Typeable)
+> data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents an item in a group by clause.
 > data GroupingExpr
@@ -346,7 +349,7 @@ I'm not sure if this is valid syntax or not.
 >     | Rollup [GroupingExpr]
 >     | GroupingSets [GroupingExpr]
 >     | SimpleGroup ValueExpr
->       deriving (Eq,Show,Read,Data,Typeable)
+>       deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents a entry in the csv of tables in the from clause.
 > data TableRef = -- | from t / from s.t
@@ -363,32 +366,58 @@ I'm not sure if this is valid syntax or not.
 >               | TRFunction [Name] [ValueExpr]
 >                 -- | from lateral t
 >               | TRLateral TableRef
->                 deriving (Eq,Show,Read,Data,Typeable)
+>                 deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | Represents an alias for a table valued expression, used in with
 > -- queries and in from alias, e.g. select a from t u, select a from t u(b),
 > -- with a(c) as select 1, select * from a.
 > data Alias = Alias Name (Maybe [Name])
->              deriving (Eq,Show,Read,Data,Typeable)
+>              deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | The type of a join.
 > data JoinType = JInner | JLeft | JRight | JFull | JCross
->                 deriving (Eq,Show,Read,Data,Typeable)
+>                 deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 > -- | The join condition.
 > data JoinCondition = JoinOn ValueExpr -- ^ on expr
 >                    | JoinUsing [Name] -- ^ using (column list)
->                      deriving (Eq,Show,Read,Data,Typeable)
+>                      deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 
 > -- | Used to set the dialect used for parsing and pretty printing,
 > -- very unfinished at the moment.
 > data Dialect = SQL2011
 >              | MySQL
->                deriving (Eq,Show,Read,Data,Typeable)
+>                deriving (Eq,Show,Read,Data,Typeable,Generic)
 
 
 > -- | Comment. Useful when generating SQL code programmatically.
 > data Comment = BlockComment String
->                deriving (Eq,Show,Read,Data,Typeable)
+>                deriving (Eq,Show,Read,Data,Typeable,Generic)
 
+> -- NFData instances
+> instance NFData Alias
+> instance NFData Comment
+> instance NFData CombineOp
+> instance NFData CompPredQuantifier
+> instance NFData Corresponding
+> instance NFData Direction
+> instance NFData Frame
+> instance NFData FramePos
+> instance NFData FrameRows
+> instance NFData GroupingExpr
+> instance NFData InPredValue
+> instance NFData IntervalTypeField
+> instance NFData JoinCondition
+> instance NFData JoinType
+> instance NFData Name
+> instance NFData NullsOrder
+> instance NFData PrecMultiplier
+> instance NFData PrecUnits
+> instance NFData QueryExpr
+> instance NFData SetQuantifier
+> instance NFData SortSpec
+> instance NFData SubQueryExprType
+> instance NFData TableRef
+> instance NFData TypeName
+> instance NFData ValueExpr
